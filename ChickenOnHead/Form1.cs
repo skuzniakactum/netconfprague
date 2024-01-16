@@ -1,6 +1,7 @@
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Diagnostics.Eventing.Reader;
+using System.Drawing.Drawing2D;
 
 namespace ChickenOnHead
 {
@@ -18,11 +19,35 @@ namespace ChickenOnHead
 
         private bool isCameraRunning = false;
 
+        private FaceDetectionService faceDetectionService;
+
+        private int frameCounter = 0;
+
         public Form1()
         {
             InitializeComponent();
             CaptureCamera();
             isCameraRunning = true;
+
+            faceDetectionService = new FaceDetectionService();
+            faceDetectionService.newFaceDetected += FaceDetectionService_newFaceDetected;
+        }
+
+        private void FaceDetectionService_newFaceDetected(object sender, FaceDetectedEventArgs args)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<object, FaceDetectedEventArgs>(FaceDetectionService_newFaceDetected), sender, args);
+            }
+            else
+            {
+                tokenSource.Cancel();
+                
+                label1.Text = "Face detected";
+
+                var newImage = OverlayImage(new Bitmap(pictureBox1.Image), args);
+                pictureBox1.Image = newImage;
+            }
         }
 
         protected override void OnClosed(EventArgs e)
@@ -35,15 +60,15 @@ namespace ChickenOnHead
         {
             tokenSource = new CancellationTokenSource();
 
-            camera = new Thread(new ThreadStart(() => CaptureCameraCallback(tokenSource.Token)));
+            camera = new Thread(new ThreadStart(async () => await CaptureCameraCallback(tokenSource.Token)));
             camera.Start();
         }
 
-        private void CaptureCameraCallback(CancellationToken token)
+        private async Task CaptureCameraCallback(CancellationToken token)
         {
             token.Register(StopCamera);
 
-            int cameraId = 2;
+            int cameraId = 1;
 
             using (frame = new Mat())
             {
@@ -62,6 +87,13 @@ namespace ChickenOnHead
                         }
 
                         pictureBox1.Image = image;
+
+                        if (frameCounter == 100)
+                        {
+                            await faceDetectionService.DetectFace(frame.Clone().ToMemoryStream());
+                            frameCounter = 0;
+                        }
+                        else { frameCounter++; }
                     }
                 }
             }
@@ -72,13 +104,30 @@ namespace ChickenOnHead
             tokenSource.Cancel();
         }
 
+        private Bitmap OverlayImage(Bitmap frame, FaceDetectedEventArgs args)
+        {
+            Bitmap chicken = new Bitmap("C:\\projects\\netconfprague\\ChickenOnHead\\chick-mask.png");
+
+            Bitmap chickenAdjusted = new Bitmap(chicken, new System.Drawing.Size(args.Width, args.Height));
+
+            Bitmap bmp = new Bitmap(frame.Width, frame.Height);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.CompositingMode = CompositingMode.SourceOver;
+                chicken.MakeTransparent();
+                g.DrawImage(frame, 0, 0);
+                g.DrawImage(chickenAdjusted, args.Left, args.Top - (args.Height / 4));
+            }
+
+            return bmp;
+        }
+
         private void StopCamera()
         {
             try
             {
                 isCameraRunning = false;
                 capture.Release();
-                camera.Abort();
             }
             catch (Exception ex)
             {
