@@ -1,6 +1,5 @@
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
-using System.Diagnostics.Eventing.Reader;
 using System.Drawing.Drawing2D;
 
 namespace ChickenOnHead
@@ -26,8 +25,6 @@ namespace ChickenOnHead
         public Form1()
         {
             InitializeComponent();
-            CaptureCamera();
-            isCameraRunning = true;
 
             faceDetectionService = new FaceDetectionService();
             faceDetectionService.newFaceDetected += FaceDetectionService_newFaceDetected;
@@ -42,18 +39,12 @@ namespace ChickenOnHead
             else
             {
                 tokenSource.Cancel();
-                
+
                 label1.Text = "Face detected";
 
                 var newImage = OverlayImage(new Bitmap(pictureBox1.Image), args);
                 pictureBox1.Image = newImage;
             }
-        }
-
-        protected override void OnClosed(EventArgs e)
-        {
-            base.OnClosed(e);
-            tokenSource.Cancel();
         }
 
         private void CaptureCamera()
@@ -68,7 +59,7 @@ namespace ChickenOnHead
         {
             token.Register(StopCamera);
 
-            int cameraId = 1;
+            int cameraId = 2;
 
             using (frame = new Mat())
             {
@@ -81,12 +72,16 @@ namespace ChickenOnHead
                     {
                         capture.Read(frame);
                         image = BitmapConverter.ToBitmap(frame);
-                        if (pictureBox1.Image != null)
-                        {
-                            pictureBox1.Image.Dispose();
-                        }
 
-                        pictureBox1.Image = image;
+                        Invoke(() =>
+                        {
+                            if (pictureBox1.Image != null)
+                            {
+                                pictureBox1.Image.Dispose();
+                            }
+
+                            pictureBox1.Image = image;
+                        });
 
                         if (frameCounter == 100)
                         {
@@ -97,11 +92,6 @@ namespace ChickenOnHead
                     }
                 }
             }
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            tokenSource.Cancel();
         }
 
         private Bitmap OverlayImage(Bitmap frame, FaceDetectedEventArgs args)
@@ -132,6 +122,23 @@ namespace ChickenOnHead
             catch (Exception ex)
             {
             }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            CaptureCamera();
+            isCameraRunning = true;
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            tokenSource.Cancel();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            tokenSource.Cancel();
         }
     }
 }

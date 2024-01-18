@@ -50,7 +50,10 @@ namespace ChickenOnHead
                 throw new ArgumentException("Settings not found");
             }
 
-            return new FaceClient(new ApiKeyServiceClientCredentials(settings.SubscriptionKey)) { Endpoint = settings.Endpoint };
+            return new FaceClient(new ApiKeyServiceClientCredentials(settings.SubscriptionKey))
+            {
+                Endpoint = settings.Endpoint
+            };
         }
     }
 }

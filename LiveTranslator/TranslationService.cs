@@ -41,16 +41,13 @@ namespace LiveTranslator
             };
 
             await _translationRecognizer.StartContinuousRecognitionAsync().ConfigureAwait(false);
-
-            //var translationRecognitionResult = await translationRecognizer.RecognizeOnceAsync();
-            //OutputSpeechRecognitionResult(translationRecognitionResult);
         }
 
         public void Dispose()
         {
             _translationRecognizer.StopContinuousRecognitionAsync().ConfigureAwait(false);
 
-            Thread.Sleep(1000);
+            Thread.Sleep(5000);
 
             _translationRecognizer.Dispose();
         }

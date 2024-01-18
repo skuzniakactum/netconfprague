@@ -1,8 +1,4 @@
-using Microsoft.CognitiveServices.Speech.Audio;
-using Microsoft.CognitiveServices.Speech.Translation;
-using Microsoft.CognitiveServices.Speech;
 using System.ComponentModel;
-using static LiveTranslator.TranslationService;
 
 namespace LiveTranslator
 {
@@ -17,14 +13,6 @@ namespace LiveTranslator
             InitializeComponent();
 
             _backgroundWorker.DoWork += _backgroundWorker_DoWork;
-
-            //_backgroundWorker.ProgressChanged += _backgroundWorker_ProgressChanged;
-            //_backgroundWorker.WorkerReportsProgress = true;
-        }
-
-        private void _backgroundWorker_ProgressChanged(object? sender, ProgressChangedEventArgs e)
-        {
-            //textBox1.Lines = new[] { args.Recognized, args.Translation, args.Error };
         }
 
         private void _backgroundWorker_DoWork(object? sender, DoWorkEventArgs e)
