@@ -396,4 +396,4 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-/ChickenOnHead/appsettings.local.json
+**/appsettings.local.json

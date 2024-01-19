@@ -1,55 +1,66 @@
 ﻿using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
 using Microsoft.CognitiveServices.Speech.Translation;
+using Microsoft.Extensions.Configuration;
 
 namespace LiveTranslator
 {
     public class TranslationService : IDisposable
     {
-        static string speechKey = "";
-        static string speechRegion = "";
-
         public delegate void NewTranslationEventHandler(object sender, TranslationEventArgs args);
 
-        public NewTranslationEventHandler newTranslationHandler;
+        public NewTranslationEventHandler NewTranslationHandler;
 
-        public NewTranslationEventHandler finishedTranslation;
+        public NewTranslationEventHandler FinishedTranslation;
 
-        private TranslationRecognizer _translationRecognizer;
+        private TranslationRecognizer translationRecognizer;
+
+        private readonly IConfiguration configuration;
 
         public TranslationService()
         {
+            configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.local.json")
+                .Build();
         }
 
         public async Task StartRecognition()
         {
-            var speechTranslationConfig = SpeechTranslationConfig.FromSubscription(speechKey, speechRegion);
+            var settings = configuration.GetRequiredSection("Settings").Get<Settings>();
+            if (settings == null)
+            {
+                throw new ArgumentException("Settings not found");
+            }
+
+            var speechTranslationConfig = SpeechTranslationConfig.FromSubscription(settings.SubscriptionKey, settings.Region);
             speechTranslationConfig.SpeechRecognitionLanguage = "pl-PL";
             speechTranslationConfig.AddTargetLanguage("en");
 
             using var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
-            _translationRecognizer = new TranslationRecognizer(speechTranslationConfig, audioConfig);
 
-            _translationRecognizer.Recognizing += (sender, args) =>
+            translationRecognizer = new TranslationRecognizer(speechTranslationConfig, audioConfig);
+
+            translationRecognizer.Recognizing += (sender, args) =>
             {
                 OutputSpeechRecognitionResult(args.Result);
             };
 
-            _translationRecognizer.Recognized += (sender, args) =>
+            translationRecognizer.Recognized += (sender, args) =>
             {
-                finishedTranslation(this, new TranslationEventArgs());
+                FinishedTranslation(this, new TranslationEventArgs());
             };
 
-            await _translationRecognizer.StartContinuousRecognitionAsync().ConfigureAwait(false);
+            await translationRecognizer.StartContinuousRecognitionAsync().ConfigureAwait(false);
         }
 
         public void Dispose()
         {
-            _translationRecognizer.StopContinuousRecognitionAsync().ConfigureAwait(false);
+            translationRecognizer.StopContinuousRecognitionAsync().ConfigureAwait(false);
 
             Thread.Sleep(5000);
 
-            _translationRecognizer.Dispose();
+            translationRecognizer.Dispose();
         }
 
         void OutputSpeechRecognitionResult(TranslationRecognitionResult translationRecognitionResult)
@@ -77,7 +88,7 @@ namespace LiveTranslator
                     break;
             }
 
-            newTranslationHandler(this, args);
+            NewTranslationHandler(this, args);
         }
     }
 }

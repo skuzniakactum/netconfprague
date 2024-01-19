@@ -18,8 +18,8 @@ namespace LiveTranslator
         private void _backgroundWorker_DoWork(object? sender, DoWorkEventArgs e)
         {
             _translationService = new TranslationService();
-            _translationService.newTranslationHandler += NewTranslationArrived;
-            _translationService.finishedTranslation += PreserveResult;
+            _translationService.NewTranslationHandler += NewTranslationArrived;
+            _translationService.FinishedTranslation += PreserveResult;
             _translationService.StartRecognition().ConfigureAwait(false);
         }
 
