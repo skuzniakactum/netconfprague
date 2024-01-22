@@ -59,7 +59,7 @@ namespace ChickenOnHead
         {
             token.Register(StopCamera);
 
-            int cameraId = 2;
+            int cameraId = 0;
 
             using (frame = new Mat())
             {
